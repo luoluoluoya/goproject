@@ -74,3 +74,17 @@ func TestCache_Del(t *testing.T) {
 		t.Fatalf("cache used size error\n")
 	}
 }
+
+func TestCache_Capacity(t *testing.T) {
+	c := NewCache(20, nil)
+	key1, value1 := "key1", String("hello world")
+	key2, value2 := "key2", String("hello go")
+	c.Set(key1, value1)
+	c.Set(key2, value2)
+	if _, ok := c.Get(key1); ok {
+		t.Fatalf("cache hit key1=‘%s’", string(value1))
+	}
+	if c.nBytes != int64(len(key2)+value2.Len()) {
+		t.Fatalf("cache used size error\n")
+	}
+}
