@@ -13,6 +13,7 @@ type ReqGroup struct {
 	m  map[string]*call
 }
 
+// 确保并发情况下函数 fn 只被执行一次
 func (g *ReqGroup) Do(key string, fn func() (interface{}, error)) (interface{}, error) {
 	g.mu.Lock()
 	if g.m == nil {
