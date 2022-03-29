@@ -12,6 +12,7 @@ type Group struct {
 	getter    Getter
 	mainCache *cache
 	peers     PeerPicker
+	loader    *ReqGroup
 }
 
 var (
@@ -33,6 +34,7 @@ func NewGroup(ident string, maxCache int64, getter Getter) *Group {
 		identify:  ident,
 		mainCache: &cache{cacheBytes: maxCache},
 		getter:    getter,
+		loader:    &ReqGroup{},
 	}
 	groups[ident] = group
 	return group
@@ -63,18 +65,20 @@ func (g *Group) Get(key string) (ByteView, error) {
 }
 
 // key不存在于本地缓存，从其他地方加载
-func (g *Group) load(key string) (bytes ByteView, err error) {
-	if g.peers != nil {
-		bytes, err = g.loadPeer(key)
+func (g *Group) load(key string) (value ByteView, err error) {
+	view, err := g.loader.Do(key, func() (interface{}, error) {
+		if g.peers != nil {
+			value, err = g.loadPeer(key)
+		}
+		if g.peers == nil || err != nil {
+			value, err = g.loadLocally(key)
+		}
+		return value, err
+	})
+	if err == nil {
+		return view.(ByteView), nil
 	}
-	if g.peers == nil || err != nil {
-		bytes, err = g.loadLocally(key)
-	}
-	if err != nil {
-		return ByteView{}, err
-	}
-	g.mainCache.Set(key, bytes)
-	return bytes, nil
+	return
 }
 
 // 本地加载

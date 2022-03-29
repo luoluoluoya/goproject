@@ -59,7 +59,6 @@ func (p *Pool) Set(peers ...string) {
 	p.getters = make(map[string]*httpGetter, len(peers))
 	for _, peer := range peers {
 		p.getters[peer] = &httpGetter{url: peer + defaultPath}
-		fmt.Printf("peer: %s\n", p.getters[peer].url)
 	}
 }
 
