@@ -75,10 +75,11 @@ func (g *Group) load(key string) (value ByteView, err error) {
 		}
 		return value, err
 	})
-	if err == nil {
-		return view.(ByteView), nil
+	if err != nil {
+		return
 	}
-	return
+	g.mainCache.Set(key, view.(ByteView)) // 设置到本机缓存
+	return view.(ByteView), nil
 }
 
 // 本地加载
