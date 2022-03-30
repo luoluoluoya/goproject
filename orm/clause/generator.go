@@ -17,17 +17,18 @@ func init() {
 	generators[LIMIT] = _limit
 	generators[WHERE] = _where
 	generators[ORDERBY] = _orderBy
+	generators[UPDATE] = _update
+	generators[DELETE] = _delete
+	generators[COUNT] = _count
 }
 
 func _insert(values ...interface{}) (string, []interface{}) {
-	// INSERT INTO $tableName ($fields)
 	tableName := values[0]
 	fields := strings.Join(values[1].([]string), ",")
 	return fmt.Sprintf("INSERT INTO %s (%v)", tableName, fields), []interface{}{}
 }
 
 func _values(values ...interface{}) (string, []interface{}) {
-	// VALUES ($v1), ($v2), ...
 	var bindStr string
 	var sql strings.Builder
 	var vars []interface{}
@@ -47,8 +48,9 @@ func _values(values ...interface{}) (string, []interface{}) {
 
 }
 
+// [ {tableName}, [ "field1","field2" ] ]
+// select {field1}, {field2} from {tableName}
 func _select(values ...interface{}) (string, []interface{}) {
-	// SELECT $fields FROM $tableName
 	tableName := values[0]
 	fields := strings.Join(values[1].([]string), ",")
 	return fmt.Sprintf("SELECT %v FROM %s", fields, tableName), []interface{}{}
@@ -63,16 +65,40 @@ func genBindVars(num int) string {
 }
 
 func _limit(values ...interface{}) (string, []interface{}) {
-	// LIMIT $num
 	return "LIMIT ?", values
 }
 
 func _where(values ...interface{}) (string, []interface{}) {
-	// WHERE $desc
 	desc, vars := values[0], values[1:]
 	return fmt.Sprintf("WHERE %s", desc), vars
 }
 
 func _orderBy(values ...interface{}) (string, []interface{}) {
 	return fmt.Sprintf("ORDER BY %s", values[0]), []interface{}{}
+}
+
+// [ {tableName}, [ "field":"value" ] ]
+// update {tableName} set {field}=?; [value]
+func _update(values ...interface{}) (string, []interface{}) {
+	var vars []interface{}
+	var sql strings.Builder
+	sql.WriteString(fmt.Sprintf("UPDATE %s SET ", values[0].(string)))
+	upd := values[1].(map[string]interface{})
+	for k, v := range upd {
+		sql.WriteString(fmt.Sprintf("%s=?,", k))
+		vars = append(vars, v)
+	}
+	return strings.TrimRight(sql.String(), ","), vars
+}
+
+// [ {tableName} ]
+// delete from {tableName}
+func _delete(values ...interface{}) (string, []interface{}) {
+	return fmt.Sprintf("DELETE FROM %s", values[0]), []interface{}{}
+}
+
+// [ {tableName} ]
+// select count(*) from {tableName}
+func _count(values ...interface{}) (string, []interface{}) {
+	return _select(values[0], []string{"count(*)"})
 }
