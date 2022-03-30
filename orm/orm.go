@@ -2,12 +2,15 @@ package orm
 
 import (
 	"database/sql"
+	"fmt"
+	"goproject/orm/dialect"
 	"goproject/orm/log"
 	"goproject/orm/session"
 )
 
 type Engine struct {
-	db *sql.DB
+	db      *sql.DB
+	dialect dialect.Dialect
 }
 
 func NewEngine(driver string, source string) (e *Engine, err error) {
@@ -23,8 +26,13 @@ func NewEngine(driver string, source string) (e *Engine, err error) {
 	if err = db.Ping(); err != nil {
 		return
 	}
+	dialect, ok := dialect.GetDialect(driver)
+	if !ok {
+		err = fmt.Errorf("driver %s not registered", driver)
+		return
+	}
 	log.Infof("Connect [%s] %s success\n", driver, source)
-	return &Engine{db: db}, nil
+	return &Engine{db: db, dialect: dialect}, nil
 }
 
 func (e *Engine) Close() {
@@ -36,5 +44,5 @@ func (e *Engine) Close() {
 }
 
 func (e *Engine) NewSession() *session.Session {
-	return session.New(e.db)
+	return session.New(e.db, e.dialect)
 }
