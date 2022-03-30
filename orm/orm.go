@@ -8,6 +8,8 @@ import (
 	"goproject/orm/session"
 )
 
+type TxFunc func(*session.Session) (result interface{}, err error)
+
 type Engine struct {
 	db      *sql.DB
 	dialect dialect.Dialect
@@ -45,4 +47,25 @@ func (e *Engine) Close() {
 
 func (e *Engine) NewSession() *session.Session {
 	return session.New(e.db, e.dialect)
+}
+
+func (e *Engine) Transaction(fn TxFunc) (result interface{}, err error) {
+	s := e.NewSession()
+	if err = s.Begin(); err != nil {
+		log.Error(err)
+		return
+	}
+	defer func() {
+		if p := recover(); p != nil {
+			_ = s.Rollback()
+			panic(p)
+		}
+		if err != nil {
+			_ = s.Rollback()
+			return
+		} else {
+			s.Commit()
+		}
+	}()
+	return fn(s)
 }

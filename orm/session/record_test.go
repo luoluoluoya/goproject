@@ -77,3 +77,27 @@ func TestSession_DeleteAndCount(t *testing.T) {
 		t.Fatal("failed to delete or count")
 	}
 }
+
+func TestSession_Begin(t *testing.T) {
+	s := testRecordInit(t)
+
+	if err := s.Begin(); err != nil {
+		t.Fatalf("failed to start transaction: %v", err)
+	}
+
+	affected, err := s.Insert(user3)
+	if err != nil || affected != 1 {
+		t.Fatal("failed to create record")
+	}
+
+	if err := s.Rollback(); err != nil {
+		t.Fatalf("failed to start transaction: %v", err)
+	}
+
+	u := &User{}
+	_ = s.Where("Name = ?", user3.Name).First(u)
+
+	if u.Name == user3.Name || u.Age == user3.Age {
+		t.Fatal("rollback user3 can`t insert")
+	}
+}
