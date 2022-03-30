@@ -19,14 +19,6 @@ func init() {
 	generators[ORDERBY] = _orderBy
 }
 
-func genBindVars(num int) string {
-	var vars []string
-	for i := 0; i < num; i++ {
-		vars = append(vars, "?")
-	}
-	return strings.Join(vars, ", ")
-}
-
 func _insert(values ...interface{}) (string, []interface{}) {
 	// INSERT INTO $tableName ($fields)
 	tableName := values[0]
@@ -60,6 +52,14 @@ func _select(values ...interface{}) (string, []interface{}) {
 	tableName := values[0]
 	fields := strings.Join(values[1].([]string), ",")
 	return fmt.Sprintf("SELECT %v FROM %s", fields, tableName), []interface{}{}
+}
+
+func genBindVars(num int) string {
+	var vars []string
+	for i := 0; i < num; i++ {
+		vars = append(vars, "?")
+	}
+	return strings.Join(vars, ", ")
 }
 
 func _limit(values ...interface{}) (string, []interface{}) {

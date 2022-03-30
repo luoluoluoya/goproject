@@ -25,18 +25,17 @@ func (c *Clause) Set(typ Type, vars ...interface{}) {
 	if c.sqlVars == nil {
 		c.sqlVars = make(map[Type][]interface{})
 	}
-	sql, vars := generators[typ](vars...)
-	c.sql[typ] = sql
-	c.sqlVars[typ] = vars
+	c.sql[typ], c.sqlVars[typ] = generators[typ](vars...)
 }
 
-func (c *Clause) Build(orders ...Type) (string, []interface{}) {
+func (c *Clause) Build(types ...Type) (string, []interface{}) {
 	var sqls []string
 	var vars []interface{}
-	for _, order := range orders {
-		if sql, ok := c.sql[order]; ok {
+	for _, typ := range types {
+		if sql, ok := c.sql[typ]; ok {
 			sqls = append(sqls, sql)
-			vars = append(vars, c.sqlVars[order]...)
+			vars = append(vars, c.sqlVars[typ]...)
+
 		}
 	}
 	return strings.Join(sqls, " "), vars
